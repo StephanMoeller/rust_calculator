@@ -63,16 +63,20 @@ mod tests {
     #[test]
     fn tokenize_numbers_in_beginning_and_end_test()
     {
-       let tokens = tokenize("1 + 232*32-  21").unwrap();
+       let tokens = tokenize("1 + 232*32-5/2 + 21").unwrap();
 
-        assert_eq!(7, tokens.len());
+        assert_eq!(11, tokens.len());
         assert_eq!(Token::Number(1), tokens[0]);
         assert_eq!(Token::Add, tokens[1]);
         assert_eq!(Token::Number(232), tokens[2]);
         assert_eq!(Token::Multiply, tokens[3]);
         assert_eq!(Token::Number(32), tokens[4]);
         assert_eq!(Token::Subtract, tokens[5]);
-        assert_eq!(Token::Number(21), tokens[6]);
+        assert_eq!(Token::Number(5), tokens[6]);
+        assert_eq!(Token::Divide, tokens[7]);
+        assert_eq!(Token::Number(2), tokens[8]);
+        assert_eq!(Token::Add, tokens[9]);
+        assert_eq!(Token::Number(21), tokens[10]);
     }
    
     #[test]
