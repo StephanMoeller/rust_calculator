@@ -29,16 +29,16 @@ fn tokenize(input: &str) -> Result<Vec<Token>, CalculatorError> {
     let mut current_number: Option<i32> = Option::None;
     for char in input.chars() {
        match char { 
-           '1' => { current_number = append_to_number(1, &current_number); }
-           '2' => { current_number = append_to_number(2, &current_number); }
-           '3' => { current_number = append_to_number(3, &current_number); }
-           '4' => { current_number = append_to_number(4, &current_number); }
-           '5' => { current_number = append_to_number(5, &current_number); }
-           '6' => { current_number = append_to_number(6, &current_number); }
-           '7' => { current_number = append_to_number(7, &current_number); }
-           '8' => { current_number = append_to_number(8, &current_number); }
-           '9' => { current_number = append_to_number(9, &current_number); }
-           '0' => { current_number = append_to_number(0, &current_number); }
+           '1' => { current_number = Option::Some(current_number.unwrap_or_else(|| 0) * 10 + 1)}
+           '2' => { current_number = Option::Some(current_number.unwrap_or_else(|| 0) * 10 + 2)}
+           '3' => { current_number = Option::Some(current_number.unwrap_or_else(|| 0) * 10 + 3)}
+           '4' => { current_number = Option::Some(current_number.unwrap_or_else(|| 0) * 10 + 4)}
+           '5' => { current_number = Option::Some(current_number.unwrap_or_else(|| 0) * 10 + 5)}
+           '6' => { current_number = Option::Some(current_number.unwrap_or_else(|| 0) * 10 + 6)}
+           '7' => { current_number = Option::Some(current_number.unwrap_or_else(|| 0) * 10 + 7)}
+           '8' => { current_number = Option::Some(current_number.unwrap_or_else(|| 0) * 10 + 8)}
+           '9' => { current_number = Option::Some(current_number.unwrap_or_else(|| 0) * 10 + 9)}
+           '0' => { current_number = Option::Some(current_number.unwrap_or_else(|| 0) * 10 + 0)}
            '+' => { if current_number.is_some() { tokens.push(Token::Number(current_number.unwrap())); current_number = Option::None; }  tokens.push(Token::Add); }
            '-' => { if current_number.is_some() { tokens.push(Token::Number(current_number.unwrap())); current_number = Option::None; }  tokens.push(Token::Subtract); }
            '*' => { if current_number.is_some() { tokens.push(Token::Number(current_number.unwrap())); current_number = Option::None; }  tokens.push(Token::Multiply); }
@@ -54,13 +54,6 @@ fn tokenize(input: &str) -> Result<Vec<Token>, CalculatorError> {
     }
    return Result::Ok(tokens); 
 } 
-fn append_to_number(digit: i32, current_number: &Option<i32>) -> Option<i32>
-{
-   let mut number = if current_number.is_some() { current_number.unwrap() }else{ 0 }; 
-    number *= 10;
-    number += digit;
-    return Option::Some(number);
-}
 
 #[cfg(test)]
 mod tests {
