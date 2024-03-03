@@ -1,6 +1,6 @@
 
 fn main() {
-    _ = calculate("1 + 3 * (3-1) / 2");
+    _ = calculate("1 + 3 * (3-1) / 2").unwrap();
 }
 
 #[derive(Debug, PartialEq)]
@@ -20,7 +20,7 @@ enum CalculatorError{
 }
 fn calculate(input: &str) -> Result<i32, CalculatorError>
 {
-    _ = tokenize(input);
+    _ = tokenize(input)?;
     return Result::Ok(3);
 }
 
