@@ -61,7 +61,7 @@ mod tests {
     use super::*;
     
     #[test]
-    fn tokenize1_test()
+    fn tokenize_numbers_in_beginning_and_end_test()
     {
        let tokens = tokenize("1 + 232*32-  21").unwrap();
 
@@ -74,9 +74,9 @@ mod tests {
         assert_eq!(Token::Subtract, tokens[5]);
         assert_eq!(Token::Number(21), tokens[6]);
     }
-    
+   
     #[test]
-    fn tokenize2_test()
+    fn tokenize_non_numbers_in_beginning_and_end_test()
     {
         let tokens = tokenize("(1 + 232*(32)-").unwrap();
 
@@ -91,6 +91,15 @@ mod tests {
         assert_eq!(Token::EndParenthesis, tokens[7]);
         assert_eq!(Token::Subtract, tokens[8]);
     }
+    #[test]
+    fn tokenize_all_digits_test()
+    {
+        let tokens = tokenize("1234567890").unwrap();
+
+        assert_eq!(1, tokens.len());
+        assert_eq!(Token::Number(1234567890), tokens[0]);
+    }
+    
     #[test]
     fn tokenize_invalid_char_expect_error_test()
     {
