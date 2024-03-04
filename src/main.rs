@@ -1,5 +1,6 @@
 fn main() {
-    _ = calculate("1 + 3 * (3-1) / 2").unwrap();
+    let result = calculate("1 + 3 * (3-1) / 2").unwrap();
+    println!("Result: {}", result);
 }
 
 #[derive(Debug, PartialEq)]
@@ -57,12 +58,12 @@ fn tokenize(input: &str) -> Result<Vec<Token>, CalculatorError> {
     return Ok(tokens);
 }
 
-fn build_tree(tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
+fn build_tree(_tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
 {
-    // Find first + or - in level 0 (eg are not inside any set of parentheses)
+    // Find first + or - in level 0 (e.g. are not inside any set of parentheses)
     // If not found, find first * or / in level 0
     // If not found, remove
-    return Result::Ok(EvaluationNode::Number(21));
+    return Ok(EvaluationNode::Number(21));
 }
 
 #[derive(Debug, PartialEq)]
@@ -73,7 +74,7 @@ enum EvaluationNode {
 
 fn eval(node: EvaluationNode) -> Result<i32, CalculatorError> {
     match node {
-        EvaluationNode::Number(val) => Result::Ok(val),
+        EvaluationNode::Number(val) => Ok(val),
         EvaluationNode::Complex(left, operator, right) => {
             let left_value = eval(*left)?;
             let right_value = eval(*right)?;
@@ -222,6 +223,6 @@ mod tests {
             Token::Divide,
             Box::from(EvaluationNode::Number(4)));
         let result = std::panic::catch_unwind(|| eval(root));
-        assert!(result.is_err());  //probe further for specific error type here, if desired
+        assert!(result.is_err());
     }
 }
