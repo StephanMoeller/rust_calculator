@@ -16,11 +16,14 @@ enum Token {
 #[derive(Debug, PartialEq)]
 enum CalculatorError {
     InvalidCharacter(char),
+    DivideByZero,
 }
 
 fn calculate(input: &str) -> Result<i32, CalculatorError> {
-    _ = tokenize(input)?;
-    return Ok(3);
+    let tokens = tokenize(input)?;
+    let root_node = build_tree(tokens)?;
+    let result = eval(root_node);
+    return result;
 }
 
 fn tokenize(input: &str) -> Result<Vec<Token>, CalculatorError> {
@@ -52,6 +55,40 @@ fn tokenize(input: &str) -> Result<Vec<Token>, CalculatorError> {
         tokens.push(Token::Number(current_number));
     }
     return Ok(tokens);
+}
+
+fn build_tree(tokens: Vec<Token>) -> Result<EvalutationNode, CalculatorError>
+{
+    return Result::Ok(EvalutationNode::Number(21));
+}
+
+#[derive(Debug, PartialEq)]
+enum EvalutationNode {
+    Number(i32),
+    Complex(Box<EvalutationNode>, Token, Box<EvalutationNode>),
+}
+
+
+fn eval(node: EvalutationNode) -> Result<i32, CalculatorError> {
+    match node {
+        EvalutationNode::Number(val) => Result::Ok(val),
+        EvalutationNode::Complex(left, operator, right) => {
+            let left_value = eval(*left)?;
+            let right_value = eval(*right)?;
+            match operator {
+                Token::Add => Result::Ok(left_value + right_value),
+                Token::Subtract => Result::Ok(left_value - right_value),
+                Token::Multiply => Result::Ok(left_value * right_value),
+                Token::Divide => {
+                    if right_value == 0 {
+                        return Result::Err(CalculatorError::DivideByZero);
+                    }
+                    return Result::Ok(left_value / right_value);
+                }
+                _ => panic!("Unexpected token here!")
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -120,5 +157,54 @@ mod tests {
     fn tokenize_invalid_char_expect_error_test() {
         let result = tokenize("1 +M 232*32-  21");
         assert_eq!(Result::Err(CalculatorError::InvalidCharacter('M')), result);
+    }
+
+    #[test]
+    fn eval_single_number_test() {
+        let root = EvalutationNode::Number(28);
+        let result = eval(root);
+        assert_eq!(28, result.unwrap());
+    }
+
+    #[test]
+    fn eval_simple_add_test() {
+        let root = EvalutationNode::Complex(Box::from(EvalutationNode::Number(12)), Token::Add, Box::from(EvalutationNode::Number(32)));
+        let result = eval(root);
+        assert_eq!(12 + 32, result.unwrap());
+    }
+
+    #[test]
+    fn eval_simple_subtract_test() {
+        let root = EvalutationNode::Complex(Box::from(EvalutationNode::Number(12)), Token::Subtract, Box::from(EvalutationNode::Number(32)));
+        let result = eval(root);
+        assert_eq!(12 - 32, result.unwrap());
+    }
+
+    #[test]
+    fn eval_simple_multiply_test() {
+        let root = EvalutationNode::Complex(Box::from(EvalutationNode::Number(12)), Token::Multiply, Box::from(EvalutationNode::Number(32)));
+        let result = eval(root);
+        assert_eq!(12 * 32, result.unwrap());
+    }
+
+    #[test]
+    fn eval_simple_divide_test() {
+        let root = EvalutationNode::Complex(Box::from(EvalutationNode::Number(12)), Token::Divide, Box::from(EvalutationNode::Number(32)));
+        let result = eval(root);
+        assert_eq!(12 / 32, result.unwrap());
+    }
+
+    #[test]
+    fn eval_complex_case_test() {
+        let root = EvalutationNode::Complex(
+            Box::from(EvalutationNode::Complex(
+                Box::from(EvalutationNode::Number(21)),
+                Token::Multiply,
+                Box::from(EvalutationNode::Number(-12)),
+            )),
+            Token::Divide,
+            Box::from(EvalutationNode::Number(4)));
+        let result = eval(root);
+        assert_eq!((21 * -12) / 4, result.unwrap());
     }
 }
