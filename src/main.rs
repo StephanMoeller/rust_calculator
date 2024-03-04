@@ -59,6 +59,9 @@ fn tokenize(input: &str) -> Result<Vec<Token>, CalculatorError> {
 
 fn build_tree(tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
 {
+    // Find first + or - in level 0 (eg are not inside any set of parentheses)
+    // If not found, find first * or / in level 0
+    // If not found, remove
     return Result::Ok(EvaluationNode::Number(21));
 }
 
@@ -205,5 +208,20 @@ mod tests {
             Box::from(EvaluationNode::Number(4)));
         let result = eval(root);
         assert_eq!((21 * -12) / 4, result.unwrap());
+    }
+
+    #[test]
+    fn eval_unexpected_token_expect_panic_test() {
+        // Panic testing source: https://stackoverflow.com/questions/26469715/how-do-i-write-a-rust-unit-test-that-ensures-that-a-panic-has-occurred
+        let root = EvaluationNode::Complex(
+            Box::from(EvaluationNode::Complex(
+                Box::from(EvaluationNode::Number(21)),
+                Token::Number(12), // This is the unexpected token - only +, -, * and / are allowed
+                Box::from(EvaluationNode::Number(-12)),
+            )),
+            Token::Divide,
+            Box::from(EvaluationNode::Number(4)));
+        let result = std::panic::catch_unwind(|| eval(root));
+        assert!(result.is_err());  //probe further for specific error type here, if desired
     }
 }
