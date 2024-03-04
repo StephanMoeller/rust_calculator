@@ -71,7 +71,12 @@ fn tokenize(input: &str) -> Result<Vec<Token>, CalculatorError> {
                 current_number = None;
                 tokens.push(Token::EndParenthesis);
             }
-            ' ' => {} // Skip any white spaces
+            ' ' => {
+                if let Some(current_number) = current_number {
+                    tokens.push(Token::Number(current_number));
+                }
+                current_number = None;
+            } // Skip any white spaces
             _ => return Err(CalculatorError::InvalidCharacter(char)),
         }
     }
@@ -121,6 +126,20 @@ mod tests {
         assert_eq!(Token::EndParenthesis, tokens[7]);
         assert_eq!(Token::Subtract, tokens[8]);
     }
+
+    #[test]
+    fn tokenize_multiple_consecutive_numbers_test()
+    {
+        let tokens = tokenize("123 45 789 0 +").unwrap();
+
+        assert_eq!(5, tokens.len());
+        assert_eq!(Token::Number(123), tokens[0]);
+        assert_eq!(Token::Number(45), tokens[1]);
+        assert_eq!(Token::Number(789), tokens[2]);
+        assert_eq!(Token::Number(0), tokens[3]);
+        assert_eq!(Token::Add, tokens[4]);
+    }
+    
     #[test]
     fn tokenize_all_digits_test() {
         let tokens = tokenize("1234567890").unwrap();
