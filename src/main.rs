@@ -12,10 +12,12 @@ enum Token {
     BeginParenthesis,
     EndParenthesis,
 }
+
 #[derive(Debug, PartialEq)]
 enum CalculatorError {
     InvalidCharacter(char),
 }
+
 fn calculate(input: &str) -> Result<i32, CalculatorError> {
     _ = tokenize(input)?;
     return Ok(3);
@@ -26,58 +28,24 @@ fn tokenize(input: &str) -> Result<Vec<Token>, CalculatorError> {
     let mut current_number: Option<i32> = None;
     for char in input.chars() {
         match char {
-            '0'..='9' => {
-                current_number = Some(current_number.unwrap_or(0) * 10 + char as i32 - '0' as i32);
-            }
-            '+' => {
+            '0'..='9' => current_number = Some(current_number.unwrap_or(0) * 10 + char as i32 - '0' as i32),
+            _ => {
                 if let Some(current_number) = current_number {
                     tokens.push(Token::Number(current_number));
                 }
                 current_number = None;
-                tokens.push(Token::Add);
-            }
-            '-' => {
-                if let Some(current_number) = current_number {
-                    tokens.push(Token::Number(current_number));
+
+                match char {
+                    '+' => tokens.push(Token::Add),
+                    '-' => tokens.push(Token::Subtract),
+                    '*' => tokens.push(Token::Multiply),
+                    '/' => tokens.push(Token::Divide),
+                    '(' => tokens.push(Token::BeginParenthesis),
+                    ')' => tokens.push(Token::EndParenthesis),
+                    ' ' => {}
+                    _ => return Err(CalculatorError::InvalidCharacter(char)),
                 }
-                current_number = None;
-                tokens.push(Token::Subtract);
             }
-            '*' => {
-                if let Some(current_number) = current_number {
-                    tokens.push(Token::Number(current_number));
-                }
-                current_number = None;
-                tokens.push(Token::Multiply);
-            }
-            '/' => {
-                if let Some(current_number) = current_number {
-                    tokens.push(Token::Number(current_number));
-                }
-                current_number = None;
-                tokens.push(Token::Divide);
-            }
-            '(' => {
-                if let Some(current_number) = current_number {
-                    tokens.push(Token::Number(current_number));
-                }
-                current_number = None;
-                tokens.push(Token::BeginParenthesis);
-            }
-            ')' => {
-                if let Some(current_number) = current_number {
-                    tokens.push(Token::Number(current_number));
-                }
-                current_number = None;
-                tokens.push(Token::EndParenthesis);
-            }
-            ' ' => {
-                if let Some(current_number) = current_number {
-                    tokens.push(Token::Number(current_number));
-                }
-                current_number = None;
-            } // Skip any white spaces
-            _ => return Err(CalculatorError::InvalidCharacter(char)),
         }
     }
     if let Some(current_number) = current_number {
@@ -139,7 +107,7 @@ mod tests {
         assert_eq!(Token::Number(0), tokens[3]);
         assert_eq!(Token::Add, tokens[4]);
     }
-    
+
     #[test]
     fn tokenize_all_digits_test() {
         let tokens = tokenize("1234567890").unwrap();
