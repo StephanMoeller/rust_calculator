@@ -3,23 +3,6 @@ fn main() {
     println!("Result: {}", result);
 }
 
-#[derive(Debug, PartialEq)]
-enum Token {
-    Number(i32),
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-    BeginParenthesis,
-    EndParenthesis,
-}
-
-#[derive(Debug, PartialEq)]
-enum CalculatorError {
-    InvalidCharacter(char),
-    DivideByZero,
-}
-
 fn calculate(input: &str) -> Result<i32, CalculatorError> {
     let tokens = tokenize(input)?;
     let root_node = build_tree(tokens)?;
@@ -64,6 +47,23 @@ fn build_tree(_tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
     // If not found, find first * or / in level 0
     // If not found, remove
     return Ok(EvaluationNode::Number(21));
+}
+
+#[derive(Debug, PartialEq)]
+enum Token {
+    Number(i32),
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    BeginParenthesis,
+    EndParenthesis,
+}
+
+#[derive(Debug, PartialEq)]
+enum CalculatorError {
+    InvalidCharacter(char),
+    DivideByZero,
 }
 
 #[derive(Debug, PartialEq)]
