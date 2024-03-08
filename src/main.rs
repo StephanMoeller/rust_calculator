@@ -23,10 +23,10 @@ fn tokenize(input: &str) -> Result<Vec<Token>, CalculatorError> {
                 current_number = None;
 
                 match char {
-                    '+' => tokens.push(Token::Add),
-                    '-' => tokens.push(Token::Subtract),
-                    '*' => tokens.push(Token::Multiply),
-                    '/' => tokens.push(Token::Divide),
+                    '+' => tokens.push(Token::Plus),
+                    '-' => tokens.push(Token::Minus),
+                    '*' => tokens.push(Token::Star),
+                    '/' => tokens.push(Token::Slash),
                     '(' => tokens.push(Token::BeginParenthesis),
                     ')' => tokens.push(Token::EndParenthesis),
                     ' ' => {}
@@ -52,10 +52,10 @@ fn build_tree(tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
             Token::Number(n) => {}
             Token::BeginParenthesis() => {}
             Token::EndParenthesis() => {}
-            Token::Add() => {}
-            Token::Subtract() => {}
-            Token::Multiply() => {}
-            Token::Divide() => {}
+            Token::Plus() => {}
+            Token::Minus() => {}
+            Token::Star() => {}
+            Token::Slash() => {}
         }
     }
     // Find first + or - in level 0 (e.g. are not inside any set of parentheses)
@@ -67,10 +67,10 @@ fn build_tree(tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
 #[derive(Debug, PartialEq)]
 enum Token {
     Number(i32),
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
+    Plus,
+    Minus,
+    Star,
+    Slash,
     BeginParenthesis,
     EndParenthesis,
 }
@@ -128,15 +128,15 @@ mod tests {
         println!("{:?}", tokens);
         assert_eq!(11, tokens.len());
         assert_eq!(Token::Number(1), tokens[0]);
-        assert_eq!(Token::Add, tokens[1]);
+        assert_eq!(Token::Plus, tokens[1]);
         assert_eq!(Token::Number(232), tokens[2]);
-        assert_eq!(Token::Multiply, tokens[3]);
+        assert_eq!(Token::Star, tokens[3]);
         assert_eq!(Token::Number(32), tokens[4]);
-        assert_eq!(Token::Subtract, tokens[5]);
+        assert_eq!(Token::Minus, tokens[5]);
         assert_eq!(Token::Number(5), tokens[6]);
-        assert_eq!(Token::Divide, tokens[7]);
+        assert_eq!(Token::Slash, tokens[7]);
         assert_eq!(Token::Number(2), tokens[8]);
-        assert_eq!(Token::Add, tokens[9]);
+        assert_eq!(Token::Plus, tokens[9]);
         assert_eq!(Token::Number(21), tokens[10]);
     }
 
@@ -148,13 +148,13 @@ mod tests {
         assert_eq!(9, tokens.len());
         assert_eq!(Token::BeginParenthesis, tokens[0]);
         assert_eq!(Token::Number(1), tokens[1]);
-        assert_eq!(Token::Add, tokens[2]);
+        assert_eq!(Token::Plus, tokens[2]);
         assert_eq!(Token::Number(232), tokens[3]);
-        assert_eq!(Token::Multiply, tokens[4]);
+        assert_eq!(Token::Star, tokens[4]);
         assert_eq!(Token::BeginParenthesis, tokens[5]);
         assert_eq!(Token::Number(32), tokens[6]);
         assert_eq!(Token::EndParenthesis, tokens[7]);
-        assert_eq!(Token::Subtract, tokens[8]);
+        assert_eq!(Token::Minus, tokens[8]);
     }
 
     #[test]
@@ -167,7 +167,7 @@ mod tests {
         assert_eq!(Token::Number(45), tokens[1]);
         assert_eq!(Token::Number(789), tokens[2]);
         assert_eq!(Token::Number(0), tokens[3]);
-        assert_eq!(Token::Add, tokens[4]);
+        assert_eq!(Token::Plus, tokens[4]);
     }
 
     #[test]
