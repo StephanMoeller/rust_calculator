@@ -85,7 +85,14 @@ enum CalculatorError {
 #[derive(Debug, PartialEq)]
 enum EvaluationNode {
     Number(i32),
-    Complex(Box<EvaluationNode>, Token, Box<EvaluationNode>),
+    Complex(Box<EvaluationNode>, Operator, Box<EvaluationNode>),
+}
+
+enum Operator {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
 }
 
 fn eval(node: EvaluationNode) -> Result<i32, CalculatorError> {
@@ -95,16 +102,15 @@ fn eval(node: EvaluationNode) -> Result<i32, CalculatorError> {
             let left_value = eval(*left)?;
             let right_value = eval(*right)?;
             match operator {
-                Token::Add => Result::Ok(left_value + right_value),
-                Token::Subtract => Result::Ok(left_value - right_value),
-                Token::Multiply => Result::Ok(left_value * right_value),
-                Token::Divide => {
+                Operator::Add => Result::Ok(left_value + right_value),
+                Operator::Subtract => Result::Ok(left_value - right_value),
+                Operator::Multiply => Result::Ok(left_value * right_value),
+                Operator::Divide => {
                     if right_value == 0 {
                         return Result::Err(CalculatorError::DivideByZero);
                     }
                     return Result::Ok(left_value / right_value);
                 }
-                _ => panic!("Unexpected token here!")
             }
         }
     }
@@ -187,28 +193,28 @@ mod tests {
 
     #[test]
     fn eval_simple_add_test() {
-        let root = EvaluationNode::Complex(Box::from(EvaluationNode::Number(12)), Token::Add, Box::from(EvaluationNode::Number(32)));
+        let root = EvaluationNode::Complex(Box::from(EvaluationNode::Number(12)), Operator::Add, Box::from(EvaluationNode::Number(32)));
         let result = eval(root);
         assert_eq!(12 + 32, result.unwrap());
     }
 
     #[test]
     fn eval_simple_subtract_test() {
-        let root = EvaluationNode::Complex(Box::from(EvaluationNode::Number(12)), Token::Subtract, Box::from(EvaluationNode::Number(32)));
+        let root = EvaluationNode::Complex(Box::from(EvaluationNode::Number(12)), Operator::Subtract, Box::from(EvaluationNode::Number(32)));
         let result = eval(root);
         assert_eq!(12 - 32, result.unwrap());
     }
 
     #[test]
     fn eval_simple_multiply_test() {
-        let root = EvaluationNode::Complex(Box::from(EvaluationNode::Number(12)), Token::Multiply, Box::from(EvaluationNode::Number(32)));
+        let root = EvaluationNode::Complex(Box::from(EvaluationNode::Number(12)), Operator::Multiply, Box::from(EvaluationNode::Number(32)));
         let result = eval(root);
         assert_eq!(12 * 32, result.unwrap());
     }
 
     #[test]
     fn eval_simple_divide_test() {
-        let root = EvaluationNode::Complex(Box::from(EvaluationNode::Number(12)), Token::Divide, Box::from(EvaluationNode::Number(32)));
+        let root = EvaluationNode::Complex(Box::from(EvaluationNode::Number(12)), Operator::Divide, Box::from(EvaluationNode::Number(32)));
         let result = eval(root);
         assert_eq!(12 / 32, result.unwrap());
     }
@@ -218,27 +224,12 @@ mod tests {
         let root = EvaluationNode::Complex(
             Box::from(EvaluationNode::Complex(
                 Box::from(EvaluationNode::Number(21)),
-                Token::Multiply,
+                Operator::Multiply,
                 Box::from(EvaluationNode::Number(-12)),
             )),
-            Token::Divide,
+            Operator::Divide,
             Box::from(EvaluationNode::Number(4)));
         let result = eval(root);
         assert_eq!((21 * -12) / 4, result.unwrap());
-    }
-
-    #[test]
-    fn eval_unexpected_token_expect_panic_test() {
-        // Panic testing source: https://stackoverflow.com/questions/26469715/how-do-i-write-a-rust-unit-test-that-ensures-that-a-panic-has-occurred
-        let root = EvaluationNode::Complex(
-            Box::from(EvaluationNode::Complex(
-                Box::from(EvaluationNode::Number(21)),
-                Token::Number(12), // This is the unexpected token - only +, -, * and / are allowed
-                Box::from(EvaluationNode::Number(-12)),
-            )),
-            Token::Divide,
-            Box::from(EvaluationNode::Number(4)));
-        let result = std::panic::catch_unwind(|| eval(root));
-        assert!(result.is_err());
     }
 }
