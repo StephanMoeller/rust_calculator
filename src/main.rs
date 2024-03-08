@@ -41,8 +41,23 @@ fn tokenize(input: &str) -> Result<Vec<Token>, CalculatorError> {
     return Ok(tokens);
 }
 
-fn build_tree(_tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
+fn build_tree(tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
 {
+    if tokens.len() == 0 {
+        return Result::Err(CalculatorError::EmptyStatement);
+    }
+
+    for i in 0..tokens.len() {
+        match tokens[i] {
+            Token::Number(n) => {}
+            Token::BeginParenthesis() => {}
+            Token::EndParenthesis() => {}
+            Token::Add() => {}
+            Token::Subtract() => {}
+            Token::Multiply() => {}
+            Token::Divide() => {}
+        }
+    }
     // Find first + or - in level 0 (e.g. are not inside any set of parentheses)
     // If not found, find first * or / in level 0
     // If not found, remove
@@ -64,6 +79,7 @@ enum Token {
 enum CalculatorError {
     InvalidCharacter(char),
     DivideByZero,
+    EmptyStatement,
 }
 
 #[derive(Debug, PartialEq)]
