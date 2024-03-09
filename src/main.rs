@@ -280,10 +280,24 @@ mod tests {
     }
 
     #[test]
-    fn validate_token_sequence_invalid_end_para_test()
+    fn validate_token_sequence_beginning_of_phrases_test()
     {
-        let tokens = tokenize(")").unwrap();
+        run_and_expect_error(")", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::EndParenthesis));
+        run_and_expect_error("*", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Star));
+        run_and_expect_error("/", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Slash));
+        run_and_expect_error("+", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Plus));
+        run_and_expect_error("-", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Minus));
+        run_and_expect_error("  ) + 12342", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::EndParenthesis));
+        run_and_expect_error("  * + 12342", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Star));
+        run_and_expect_error("  / + 12342", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Slash));
+        run_and_expect_error("  + + 12342", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Plus));
+        run_and_expect_error("  - + 12342", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Minus));
+    }
+
+    fn run_and_expect_error(phrase: &str, expected_error: CalculatorError)
+    {
+        let tokens = tokenize(phrase).unwrap();
         let result = validate_token_sequence(&tokens);
-        assert_eq!(result, Err(CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::EndParenthesis)));
+        assert_eq!(expected_error, result.err().unwrap());
     }
 }
