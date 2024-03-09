@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 fn main() {
     let result = calculate("1 + 3 * (3-1) / 2").unwrap();
     println!("Result: {}", result);
@@ -5,6 +7,7 @@ fn main() {
 
 fn calculate(input: &str) -> Result<i32, CalculatorError> {
     let tokens = tokenize(input)?;
+    validate_token_sequence(&tokens)?;
     let root_node = build_tree(tokens)?;
     let result = eval(root_node);
     return result;
@@ -41,30 +44,58 @@ fn tokenize(input: &str) -> Result<Vec<Token>, CalculatorError> {
     return Ok(tokens);
 }
 
-fn build_tree(tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
+fn validate_token_sequence(tokens: &Vec<Token>) -> Result<(), CalculatorError>
 {
     if tokens.len() == 0 {
         return Result::Err(CalculatorError::EmptyStatement);
     }
 
+    // The rules for which tokens can follow each other are:
+    // format: [token] > [valid followers]
+    // START > AnyNumber, BeginGroup
+    // BeginGroup > AnyNumber, BeginGroup
+    // AnyNumber > AnyOperator, EndGroup
+    // AnyOperator > AnyNumber, BeginGroup
+    // EndGroup > EndGroup, AnyOperator
+    let followers_by_token: HashMap<TokenCategory, HashSet<TokenCategory>> = HashMap::from([
+        (TokenCategory::AnyNumber, HashSet::from([TokenCategory::AnyOperator, TokenCategory::EndGroup])),
+        (TokenCategory::AnyOperator, HashSet::from([TokenCategory::AnyNumber, TokenCategory::BeginGroup])),
+        (TokenCategory::EndGroup, HashSet::from([TokenCategory::EndGroup, TokenCategory::AnyOperator])),
+        (TokenCategory::BeginGroup, HashSet::from([TokenCategory::AnyNumber, TokenCategory::BeginGroup]))
+    ]);
+
+    let mut prev_cat = TokenCategory::BeginGroup;
+
+    // Validate sequence
     for i in 0..tokens.len() {
-        match tokens[i] {
-            Token::Number(n) => {}
-            Token::BeginParenthesis() => {}
-            Token::EndParenthesis() => {}
-            Token::Plus() => {}
-            Token::Minus() => {}
-            Token::Star() => {}
-            Token::Slash() => {}
+        let current_cat = get_category(&tokens[i]);
+
+        if !followers_by_token[&prev_cat].contains(&current_cat)
+        {
+            return Result::Err(CalculatorError::InvalidTokenSequence(prev_cat, tokens[i].clone()));
         }
+
+        prev_cat = current_cat;
     }
-    // Find first + or - in level 0 (e.g. are not inside any set of parentheses)
-    // If not found, find first * or / in level 0
-    // If not found, remove
+
+    return Result::Ok(());
+}
+
+fn build_tree(_tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
+{
     return Ok(EvaluationNode::Number(21));
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq, Clone)]
+enum TokenCategory
+{
+    AnyNumber,
+    AnyOperator,
+    BeginGroup,
+    EndGroup,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 enum Token {
     Number(i32),
     Plus,
@@ -75,11 +106,24 @@ enum Token {
     EndParenthesis,
 }
 
+fn get_category(token: &Token) -> TokenCategory {
+    match token {
+        Token::Number(_) => TokenCategory::AnyNumber,
+        Token::Plus => TokenCategory::AnyOperator,
+        Token::Minus => TokenCategory::AnyOperator,
+        Token::Star => TokenCategory::AnyOperator,
+        Token::Slash => TokenCategory::AnyOperator,
+        Token::BeginParenthesis => TokenCategory::BeginGroup,
+        Token::EndParenthesis => TokenCategory::EndGroup
+    }
+}
+
 #[derive(Debug, PartialEq)]
 enum CalculatorError {
     InvalidCharacter(char),
     DivideByZero,
     EmptyStatement,
+    InvalidTokenSequence(TokenCategory, Token),
 }
 
 #[derive(Debug, PartialEq)]
@@ -88,6 +132,8 @@ enum EvaluationNode {
     Complex(Box<EvaluationNode>, Operator, Box<EvaluationNode>),
 }
 
+
+#[derive(Debug, PartialEq)]
 enum Operator {
     Add,
     Subtract,
@@ -231,5 +277,13 @@ mod tests {
             Box::from(EvaluationNode::Number(4)));
         let result = eval(root);
         assert_eq!((21 * -12) / 4, result.unwrap());
+    }
+
+    #[test]
+    fn validate_token_sequence_invalid_end_para_test()
+    {
+        let tokens = tokenize(")").unwrap();
+        let result = validate_token_sequence(&tokens);
+        assert_eq!(result, Err(CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::EndParenthesis)));
     }
 }
