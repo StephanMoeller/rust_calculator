@@ -81,8 +81,21 @@ fn validate_token_sequence(tokens: &Vec<Token>) -> Result<(), CalculatorError>
     return Result::Ok(());
 }
 
-fn build_tree(_tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
+fn build_tree(mut _tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
 {
+    match _tokens.len()
+    {
+        0 => panic!("This should not be possible!"),
+        1 => {
+            let single_node = _tokens.remove(0);
+            if let Token::Number(num) = single_node {
+                return Result::Ok(EvaluationNode::Number(num));
+            } else {
+                panic!("This should not happen 2");
+            }
+        }
+        others => {}
+    }
     return Ok(EvaluationNode::Number(21));
 }
 
@@ -164,6 +177,7 @@ fn eval(node: EvaluationNode) -> Result<i32, CalculatorError> {
 
 #[cfg(test)]
 mod tests {
+    use std::arch::x86_64::_mm_loadl_epi64;
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
@@ -299,5 +313,13 @@ mod tests {
         let tokens = tokenize(phrase).unwrap();
         let result = validate_token_sequence(&tokens);
         assert_eq!(expected_error, result.err().unwrap());
+    }
+
+    #[test]
+    fn build_tree_single_numbers_test()
+    {
+        assert_eq!(EvaluationNode::Number(1), build_tree(tokenize("1").unwrap()).unwrap());
+        assert_eq!(EvaluationNode::Number(123), build_tree(tokenize("123").unwrap()).unwrap());
+        assert_eq!(EvaluationNode::Number(123), build_tree(tokenize("  123  ").unwrap()).unwrap());
     }
 }
