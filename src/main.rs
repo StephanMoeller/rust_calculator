@@ -64,38 +64,38 @@ fn validate_token_sequence(tokens: &Vec<Token>) -> Result<(), CalculatorError>
 
     // Validate sequence
     for i in 0..tokens.len() {
-        let current_token = tokens[0].clone();
+        let current_token = tokens[i].clone();
         let prev_copy = prev_token.clone();
         match prev_copy {
             Token::Number(_) => {
                 match current_token {
-                    Token::Number(_) => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::Number(_) => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, current_token.clone())),
                     Token::Operator(_) => {}
-                    Token::BeginParenthesis => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::BeginParenthesis => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, current_token.clone())),
                     Token::EndParenthesis => {}
                 }
             }
             Token::Operator(_) => {
                 match current_token {
                     Token::Number(_) => {}
-                    Token::Operator(_) => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::Operator(_) => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, current_token.clone())),
                     Token::BeginParenthesis => {}
-                    Token::EndParenthesis => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::EndParenthesis => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, current_token.clone())),
                 }
             }
             Token::BeginParenthesis => {
                 match current_token {
                     Token::Number(_) => {}
-                    Token::Operator(_) => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::Operator(_) => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, current_token.clone())),
                     Token::BeginParenthesis => {}
-                    Token::EndParenthesis => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::EndParenthesis => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, current_token.clone())),
                 }
             }
             Token::EndParenthesis => {
                 match current_token {
-                    Token::Number(_) => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::Number(_) => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, current_token.clone())),
                     Token::Operator(_) => {}
-                    Token::BeginParenthesis => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::BeginParenthesis => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, current_token.clone())),
                     Token::EndParenthesis => {}
                 }
             }
@@ -335,6 +335,8 @@ mod tests {
     #[test]
     fn calculate_simple_math_test()
     {
-        assert_eq!(Result::Ok(3), calculate("1 + 2"));
+        assert_eq!(Result::Ok(1 + 2), calculate("1 + 2"));
+        assert_eq!(Result::Ok(1 + 2 + 684), calculate("1 + 2 + 684"));
+        assert_eq!(Result::Ok(1 + 2 - 684), calculate("1 + 2 - 684"));
     }
 }
