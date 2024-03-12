@@ -113,21 +113,19 @@ fn build_tree(mut tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
         panic!("Empty token list not expected here!");
     }
 
-    let left: EvaluationNode;
-    match tokens.remove(0) {
-        Token::Number(num) => left = EvaluationNode::Number(num),
+    let left: EvaluationNode = match tokens.remove(0) {
+        Token::Number(num) => EvaluationNode::Number(num),
         _ => panic!("Expected number at first position.")
-    }
+    };
 
     if tokens.len() == 0 {
         return Result::Ok(left);
     }
 
-    let operator: Operator;
-    match tokens.remove(0) {
-        Token::Operator(op) => operator = op,
+    let operator: Operator = match tokens.remove(0) {
+        Token::Operator(op) => op,
         _ => panic!("Expected operator at second position.")
-    }
+    };
 
     let right: EvaluationNode = build_tree(tokens).unwrap();
     return Result::Ok(EvaluationNode::Complex(Box::new(left), operator, Box::new(right)));
@@ -337,6 +335,6 @@ mod tests {
     {
         assert_eq!(Result::Ok(1 + 2), calculate("1 + 2"));
         assert_eq!(Result::Ok(1 + 2 + 684), calculate("1 + 2 + 684"));
-        assert_eq!(Result::Ok(1 + 2 - 684), calculate("1 + 2 - 684"));
+        assert_eq!(Result::Ok(1 + 2 - 684 + 84648), calculate("1 + 2 - 684 + 84648"));
     }
 }
