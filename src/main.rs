@@ -1,3 +1,7 @@
+use std::io::LineWriter;
+use std::sync::Mutex;
+use std::thread::park_timeout;
+
 fn main() {
     let result = calculate("1 + 3 * (3-1) / 2").unwrap();
     println!("Result: {}", result);
@@ -103,17 +107,30 @@ fn validate_token_sequence(tokens: &Vec<Token>) -> Result<(), CalculatorError>
     return Result::Ok(());
 }
 
-fn build_tree(mut _tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
+fn build_tree(mut tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
 {
-    match _tokens.len() {
-        0 => panic!("Empty token list not expected here!"),
-        1 => match _tokens[0].clone() {
-            Token::Number(num) => return Result::Ok(EvaluationNode::Number(num)),
-            _ => panic!("Unexpected token detected")
-        },
-        _ => {}
+    if tokens.len() == 0 {
+        panic!("Empty token list not expected here!");
     }
-    return Ok(EvaluationNode::Number(21));
+
+    let left: EvaluationNode;
+    match tokens.remove(0) {
+        Token::Number(num) => left = EvaluationNode::Number(num),
+        _ => panic!("Expected number at first position.")
+    }
+
+    if tokens.len() == 0 {
+        return Result::Ok(left);
+    }
+
+    let operator: Operator;
+    match tokens.remove(0) {
+        Token::Operator(op) => operator = op,
+        _ => panic!("Expected operator at second position.")
+    }
+
+    let right: EvaluationNode = build_tree(tokens).unwrap();
+    return Result::Ok(EvaluationNode::Complex(Box::new(left), operator, Box::new(right)));
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -313,5 +330,11 @@ mod tests {
         assert_eq!(1, calculate("1").unwrap());
         assert_eq!(123, calculate("123").unwrap());
         assert_eq!(123, calculate(" 123  ").unwrap());
+    }
+
+    #[test]
+    fn calculate_simple_math_test()
+    {
+        assert_eq!(Result::Ok(3), calculate("1 + 2"));
     }
 }
