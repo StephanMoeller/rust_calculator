@@ -105,6 +105,14 @@ fn validate_token_sequence(tokens: &Vec<Token>) -> Result<(), CalculatorError>
 
 fn build_tree(mut _tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
 {
+    match _tokens.len() {
+        0 => panic!("Empty token list not expected here!"),
+        1 => match _tokens[0].clone() {
+            Token::Number(num) => return Result::Ok(EvaluationNode::Number(num)),
+            _ => panic!("Unexpected token detected")
+        },
+        _ => {}
+    }
     return Ok(EvaluationNode::Number(21));
 }
 
