@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-
 fn main() {
     let result = calculate("1 + 3 * (3-1) / 2").unwrap();
     println!("Result: {}", result);
@@ -26,10 +24,10 @@ fn tokenize(input: &str) -> Result<Vec<Token>, CalculatorError> {
                 current_number = None;
 
                 match char {
-                    '+' => tokens.push(Token::Plus),
-                    '-' => tokens.push(Token::Minus),
-                    '*' => tokens.push(Token::Star),
-                    '/' => tokens.push(Token::Slash),
+                    '+' => tokens.push(Token::Operator(Operator::Add)),
+                    '-' => tokens.push(Token::Operator(Operator::Subtract)),
+                    '*' => tokens.push(Token::Operator(Operator::Multiply)),
+                    '/' => tokens.push(Token::Operator(Operator::Divide)),
                     '(' => tokens.push(Token::BeginParenthesis),
                     ')' => tokens.push(Token::EndParenthesis),
                     ' ' => {}
@@ -57,25 +55,49 @@ fn validate_token_sequence(tokens: &Vec<Token>) -> Result<(), CalculatorError>
     // AnyNumber > AnyOperator, EndGroup
     // AnyOperator > AnyNumber, BeginGroup
     // EndGroup > EndGroup, AnyOperator
-    let followers_by_token: HashMap<TokenCategory, HashSet<TokenCategory>> = HashMap::from([
-        (TokenCategory::AnyNumber, HashSet::from([TokenCategory::AnyOperator, TokenCategory::EndGroup])),
-        (TokenCategory::AnyOperator, HashSet::from([TokenCategory::AnyNumber, TokenCategory::BeginGroup])),
-        (TokenCategory::EndGroup, HashSet::from([TokenCategory::EndGroup, TokenCategory::AnyOperator])),
-        (TokenCategory::BeginGroup, HashSet::from([TokenCategory::AnyNumber, TokenCategory::BeginGroup]))
-    ]);
 
-    let mut prev_cat = TokenCategory::BeginGroup;
+    let mut prev_token = Token::BeginParenthesis;
 
     // Validate sequence
     for i in 0..tokens.len() {
-        let current_cat = get_category(&tokens[i]);
-
-        if !followers_by_token[&prev_cat].contains(&current_cat)
-        {
-            return Result::Err(CalculatorError::InvalidTokenSequence(prev_cat, tokens[i].clone()));
+        let current_token = tokens[0].clone();
+        let prev_copy = prev_token.clone();
+        match prev_copy {
+            Token::Number(_) => {
+                match current_token {
+                    Token::Number(_) => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::Operator(_) => {}
+                    Token::BeginParenthesis => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::EndParenthesis => {}
+                }
+            }
+            Token::Operator(_) => {
+                match current_token {
+                    Token::Number(_) => {}
+                    Token::Operator(_) => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::BeginParenthesis => {}
+                    Token::EndParenthesis => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                }
+            }
+            Token::BeginParenthesis => {
+                match current_token {
+                    Token::Number(_) => {}
+                    Token::Operator(_) => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::BeginParenthesis => {}
+                    Token::EndParenthesis => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                }
+            }
+            Token::EndParenthesis => {
+                match current_token {
+                    Token::Number(_) => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::Operator(_) => {}
+                    Token::BeginParenthesis => return Result::Err(CalculatorError::InvalidTokenSequence(prev_copy, tokens[i].clone())),
+                    Token::EndParenthesis => {}
+                }
+            }
         }
 
-        prev_cat = current_cat;
+        prev_token = current_token.clone();
     }
 
     return Result::Ok(());
@@ -83,52 +105,15 @@ fn validate_token_sequence(tokens: &Vec<Token>) -> Result<(), CalculatorError>
 
 fn build_tree(mut _tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
 {
-    match _tokens.len()
-    {
-        0 => panic!("This should not be possible!"),
-        1 => {
-            let single_node = _tokens.remove(0);
-            if let Token::Number(num) = single_node {
-                return Result::Ok(EvaluationNode::Number(num));
-            } else {
-                panic!("This should not happen 2");
-            }
-        }
-        others => {}
-    }
     return Ok(EvaluationNode::Number(21));
-}
-
-#[derive(Debug, Eq, Hash, PartialEq, Clone)]
-enum TokenCategory
-{
-    AnyNumber,
-    AnyOperator,
-    BeginGroup,
-    EndGroup,
 }
 
 #[derive(Debug, PartialEq, Clone)]
 enum Token {
     Number(i32),
-    Plus,
-    Minus,
-    Star,
-    Slash,
+    Operator(Operator),
     BeginParenthesis,
     EndParenthesis,
-}
-
-fn get_category(token: &Token) -> TokenCategory {
-    match token {
-        Token::Number(_) => TokenCategory::AnyNumber,
-        Token::Plus => TokenCategory::AnyOperator,
-        Token::Minus => TokenCategory::AnyOperator,
-        Token::Star => TokenCategory::AnyOperator,
-        Token::Slash => TokenCategory::AnyOperator,
-        Token::BeginParenthesis => TokenCategory::BeginGroup,
-        Token::EndParenthesis => TokenCategory::EndGroup
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -136,7 +121,7 @@ enum CalculatorError {
     InvalidCharacter(char),
     DivideByZero,
     EmptyStatement,
-    InvalidTokenSequence(TokenCategory, Token),
+    InvalidTokenSequence(Token, Token),
 }
 
 #[derive(Debug, PartialEq)]
@@ -146,7 +131,7 @@ enum EvaluationNode {
 }
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq, Clone)]
 enum Operator {
     Add,
     Subtract,
@@ -177,7 +162,6 @@ fn eval(node: EvaluationNode) -> Result<i32, CalculatorError> {
 
 #[cfg(test)]
 mod tests {
-    use std::arch::x86_64::_mm_loadl_epi64;
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
@@ -188,15 +172,15 @@ mod tests {
         println!("{:?}", tokens);
         assert_eq!(11, tokens.len());
         assert_eq!(Token::Number(1), tokens[0]);
-        assert_eq!(Token::Plus, tokens[1]);
+        assert_eq!(Token::Operator(Operator::Add), tokens[1]);
         assert_eq!(Token::Number(232), tokens[2]);
-        assert_eq!(Token::Star, tokens[3]);
+        assert_eq!(Token::Operator(Operator::Multiply), tokens[3]);
         assert_eq!(Token::Number(32), tokens[4]);
-        assert_eq!(Token::Minus, tokens[5]);
+        assert_eq!(Token::Operator(Operator::Subtract), tokens[5]);
         assert_eq!(Token::Number(5), tokens[6]);
-        assert_eq!(Token::Slash, tokens[7]);
+        assert_eq!(Token::Operator(Operator::Divide), tokens[7]);
         assert_eq!(Token::Number(2), tokens[8]);
-        assert_eq!(Token::Plus, tokens[9]);
+        assert_eq!(Token::Operator(Operator::Add), tokens[9]);
         assert_eq!(Token::Number(21), tokens[10]);
     }
 
@@ -208,13 +192,13 @@ mod tests {
         assert_eq!(9, tokens.len());
         assert_eq!(Token::BeginParenthesis, tokens[0]);
         assert_eq!(Token::Number(1), tokens[1]);
-        assert_eq!(Token::Plus, tokens[2]);
+        assert_eq!(Token::Operator(Operator::Add), tokens[2]);
         assert_eq!(Token::Number(232), tokens[3]);
-        assert_eq!(Token::Star, tokens[4]);
+        assert_eq!(Token::Operator(Operator::Multiply), tokens[4]);
         assert_eq!(Token::BeginParenthesis, tokens[5]);
         assert_eq!(Token::Number(32), tokens[6]);
         assert_eq!(Token::EndParenthesis, tokens[7]);
-        assert_eq!(Token::Minus, tokens[8]);
+        assert_eq!(Token::Operator(Operator::Subtract), tokens[8]);
     }
 
     #[test]
@@ -227,7 +211,7 @@ mod tests {
         assert_eq!(Token::Number(45), tokens[1]);
         assert_eq!(Token::Number(789), tokens[2]);
         assert_eq!(Token::Number(0), tokens[3]);
-        assert_eq!(Token::Plus, tokens[4]);
+        assert_eq!(Token::Operator(Operator::Add), tokens[4]);
     }
 
     #[test]
@@ -296,16 +280,16 @@ mod tests {
     #[test]
     fn validate_token_sequence_beginning_of_phrases_test()
     {
-        run_and_expect_error(")", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::EndParenthesis));
-        run_and_expect_error("*", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Star));
-        run_and_expect_error("/", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Slash));
-        run_and_expect_error("+", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Plus));
-        run_and_expect_error("-", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Minus));
-        run_and_expect_error("  ) + 12342", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::EndParenthesis));
-        run_and_expect_error("  * + 12342", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Star));
-        run_and_expect_error("  / + 12342", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Slash));
-        run_and_expect_error("  + + 12342", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Plus));
-        run_and_expect_error("  - + 12342", CalculatorError::InvalidTokenSequence(TokenCategory::BeginGroup, Token::Minus));
+        run_and_expect_error(")", CalculatorError::InvalidTokenSequence(Token::BeginParenthesis, Token::EndParenthesis));
+        run_and_expect_error("*", CalculatorError::InvalidTokenSequence(Token::BeginParenthesis, Token::Operator(Operator::Multiply)));
+        run_and_expect_error("/", CalculatorError::InvalidTokenSequence(Token::BeginParenthesis, Token::Operator(Operator::Divide)));
+        run_and_expect_error("+", CalculatorError::InvalidTokenSequence(Token::BeginParenthesis, Token::Operator(Operator::Add)));
+        run_and_expect_error("-", CalculatorError::InvalidTokenSequence(Token::BeginParenthesis, Token::Operator(Operator::Subtract)));
+        run_and_expect_error("  ) + 12342", CalculatorError::InvalidTokenSequence(Token::BeginParenthesis, Token::EndParenthesis));
+        run_and_expect_error("  * + 12342", CalculatorError::InvalidTokenSequence(Token::BeginParenthesis, Token::Operator(Operator::Multiply)));
+        run_and_expect_error("  / + 12342", CalculatorError::InvalidTokenSequence(Token::BeginParenthesis, Token::Operator(Operator::Divide)));
+        run_and_expect_error("  + + 12342", CalculatorError::InvalidTokenSequence(Token::BeginParenthesis, Token::Operator(Operator::Add)));
+        run_and_expect_error("  - + 12342", CalculatorError::InvalidTokenSequence(Token::BeginParenthesis, Token::Operator(Operator::Subtract)));
     }
 
     fn run_and_expect_error(phrase: &str, expected_error: CalculatorError)
@@ -316,10 +300,10 @@ mod tests {
     }
 
     #[test]
-    fn build_tree_single_numbers_test()
+    fn calculate_single_numbers_test()
     {
-        assert_eq!(EvaluationNode::Number(1), build_tree(tokenize("1").unwrap()).unwrap());
-        assert_eq!(EvaluationNode::Number(123), build_tree(tokenize("123").unwrap()).unwrap());
-        assert_eq!(EvaluationNode::Number(123), build_tree(tokenize("  123  ").unwrap()).unwrap());
+        assert_eq!(1, calculate("1").unwrap());
+        assert_eq!(123, calculate("123").unwrap());
+        assert_eq!(123, calculate(" 123  ").unwrap());
     }
 }
