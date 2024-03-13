@@ -111,22 +111,51 @@ fn build_tree(mut tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
         panic!("Empty token list not expected here!");
     }
 
-    let left: EvaluationNode = match tokens.remove(0) {
+    // Start out by letting first node represent the entire tree so far
+    let first_single_node: EvaluationNode = match tokens.remove(0) {
         Token::Number(num) => EvaluationNode::Number(num),
         _ => panic!("Expected number at first position.")
     };
 
-    if tokens.len() == 0 {
-        return Result::Ok(left);
+    let result = append_to_tree(first_single_node, tokens);
+    match result {
+        Result::Ok(final_tree) => Result::Ok(final_tree),
+        Result::Err(err) => Result::Err(err)
     }
+}
 
-    let operator: Operator = match tokens.remove(0) {
-        Token::Operator(op) => op,
-        _ => panic!("Expected operator at second position.")
-    };
+fn append_to_tree(tree: EvaluationNode, mut tokens: Vec<Token>) -> Result<EvaluationNode, CalculatorError>
+{
+    match tokens.len() {
+        0 => {
+            return Result::Ok(tree);
+        }
+        1 => panic!("Expected 0 or 2+ nodes here"),
+        _ => {
+            // Expect operator as first node
+            match tokens.remove(0) {
+                Token::Operator(op) => {
+                    // Expect next node to be a number
+                    match tokens.remove(0) {
+                        Token::Number(num) => {
+                            // Start out by adding next number in this way:
+                            //         op
+                            //      /      \
+                            //     /        \
+                            //  OLD TREE  new_node
+                            let tree = EvaluationNode::Complex(Box::new(tree), op, Box::new(EvaluationNode::Number(num)));
 
-    let right: EvaluationNode = build_tree(tokens).unwrap();
-    return Result::Ok(EvaluationNode::Complex(Box::new(left), operator, Box::new(right)));
+                            // ...and now call recursively with this new tree and the remaining tokens
+                            let tree = append_to_tree(tree, tokens).unwrap();
+                            return Result::Ok(tree);
+                        }
+                        _ => panic!("Expected number here")
+                    }
+                }
+                _ => panic!("Expected operator here")
+            }
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -332,12 +361,20 @@ mod tests {
     fn build_tree_single_level_test()
     {
         assert_eq!("265", run_build_tree_test("265"));
-        assert_eq!("(1+2)", run_build_tree_test("1 + 2"));
-        assert_eq!("(((1+2)-684)+84648)", run_build_tree_test("1 + 2 - 684 + 84648"));
+        assert_eq!("(1 + 2)", run_build_tree_test("1 + 2"));
+        assert_eq!("(((1 + 2) - 684) + 84648)", run_build_tree_test("1 + 2 - 684 + 84648"));
     }
 
     fn run_build_tree_test(phrase: &str) -> String {
         return to_string_node(&build_tree(tokenize(phrase).unwrap()).unwrap());
+    }
+
+    #[test]
+    fn calculate_test()
+    {
+        assert_eq!(265, calculate("265").unwrap());
+        assert_eq!(1 + 2, calculate("1 + 2").unwrap());
+        assert_eq!(1 + 2 - 684 + 84648, calculate("1 + 2 - 684 + 84648").unwrap());
     }
 
     fn to_string_node(node: &EvaluationNode) -> String {
@@ -348,7 +385,7 @@ mod tests {
                     let l = to_string_node(&left);
                     let o = to_string_op(&op);
                     let r = to_string_node(&right);
-                    return "(".to_owned() + &l + &o + &r + ")";
+                    return "(".to_owned() + &l + " " + &o + " " + &r + ")";
                 }
         }
     }
