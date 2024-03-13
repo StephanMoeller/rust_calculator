@@ -331,9 +331,13 @@ mod tests {
     #[test]
     fn build_tree_single_level_test()
     {
-        assert_eq!("265", to_string_node(&build_tree(tokenize("265").unwrap()).unwrap()));
-        assert_eq!("(1+2)", to_string_node(&build_tree(tokenize("1 + 2").unwrap()).unwrap()));
-        assert_eq!("(((1+2)-684)+84648)", to_string_node(&build_tree(tokenize("1 + 2 - 684 + 84648").unwrap()).unwrap()));
+        assert_eq!("265", run_build_tree_test("265"));
+        assert_eq!("(1+2)", run_build_tree_test("1 + 2"));
+        assert_eq!("(((1+2)-684)+84648)", run_build_tree_test("1 + 2 - 684 + 84648"));
+    }
+
+    fn run_build_tree_test(phrase: &str) -> String {
+        return to_string_node(&build_tree(tokenize(phrase).unwrap()).unwrap());
     }
 
     fn to_string_node(node: &EvaluationNode) -> String {
