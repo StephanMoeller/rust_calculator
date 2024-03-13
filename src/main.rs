@@ -1,6 +1,4 @@
-use std::io::LineWriter;
-use std::sync::Mutex;
-use std::thread::park_timeout;
+extern crate core;
 
 fn main() {
     let result = calculate("1 + 3 * (3-1) / 2").unwrap();
@@ -331,10 +329,33 @@ mod tests {
     }
 
     #[test]
-    fn calculate_simple_math_test()
+    fn build_tree_single_level_test()
     {
-        assert_eq!(Result::Ok(1 + 2), calculate("1 + 2"));
-        assert_eq!(Result::Ok(1 + 2 + 684), calculate("1 + 2 + 684"));
-        assert_eq!(Result::Ok(1 + 2 - 684 + 84648), calculate("1 + 2 - 684 + 84648"));
+        assert_eq!("265", to_string_node(&build_tree(tokenize("265").unwrap()).unwrap()));
+        assert_eq!("(1+2)", to_string_node(&build_tree(tokenize("1 + 2").unwrap()).unwrap()));
+        assert_eq!("(((1+2)-684)+84648)", to_string_node(&build_tree(tokenize("1 + 2 - 684 + 84648").unwrap()).unwrap()));
+    }
+
+    fn to_string_node(node: &EvaluationNode) -> String {
+        match node {
+            EvaluationNode::Number(num) => num.to_string(),
+            EvaluationNode::Complex(left, op, right) =>
+                {
+                    let l = to_string_node(&left);
+                    let o = to_string_op(&op);
+                    let r = to_string_node(&right);
+                    return "(".to_owned() + &l + &o + &r + ")";
+                }
+        }
+    }
+
+    fn to_string_op(op: &Operator) -> String
+    {
+        match op {
+            Operator::Add => "+".to_string(),
+            Operator::Subtract => "-".to_string(),
+            Operator::Multiply => "*".to_string(),
+            Operator::Divide => "/".to_string()
+        }
     }
 }
