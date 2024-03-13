@@ -358,11 +358,17 @@ mod tests {
     }
 
     #[test]
-    fn build_tree_single_level_test()
+    fn build_tree_simple_test()
     {
         assert_eq!("265", run_build_tree_test("265"));
         assert_eq!("(1 + 2)", run_build_tree_test("1 + 2"));
         assert_eq!("(((1 + 2) - 684) + 84648)", run_build_tree_test("1 + 2 - 684 + 84648"));
+    }
+
+    #[test]
+    fn build_tree_parantheses_test()
+    {
+        assert_eq!("((1 + 2) - (684 + 84648))", run_build_tree_test("1 - 2 - (684 + 84648)"));
     }
 
     fn run_build_tree_test(phrase: &str) -> String {
@@ -370,11 +376,17 @@ mod tests {
     }
 
     #[test]
-    fn calculate_test()
+    fn calculate_simple_test()
     {
         assert_eq!(265, calculate("265").unwrap());
         assert_eq!(1 + 2, calculate("1 + 2").unwrap());
         assert_eq!(1 + 2 - 684 + 84648, calculate("1 + 2 - 684 + 84648").unwrap());
+    }
+
+    #[test]
+    fn calculate_parantheses_test()
+    {
+        assert_eq!(1 + 2 - (684 + 84648), calculate("1 - 2 - (684 + 84648)").unwrap());
     }
 
     fn to_string_node(node: &EvaluationNode) -> String {
